@@ -1,5 +1,6 @@
-use std::fs::File; 
+use std::fs::{self, File};
 use std::io::Error;
+use serde_json::json;
 
 fn main() {
     setup();
@@ -7,23 +8,17 @@ fn main() {
 
 fn setup() -> Result<(), Error>{
 
-    let config_file = File::create("ytc_config.json")?;
+    let config_json = json!({
+        "read":"false",
+        "port":"7777",
+        "database_path": "ytc_data.json"
+    });
+    
+    fs::write("ytc_config.json", config_json.to_string())?;
+
+
 
     Ok(())
 
 
-}
-
-struct Config<'a>{
-    port: &'a str,
-    database_path: &'a str,
-}
-
-impl<'a> Config<'a>{
-    fn default() -> Config<'a>{
-        Config {
-            port: "7777",
-            database_path: "ytc_data.json",
-        }
-    }
 }
