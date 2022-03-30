@@ -1,49 +1,35 @@
-use std::fs::{self, File};
 use serde_json::{json, to_string_pretty};
-use rusqlite::Connection;
-use std::error::Error;
+use std::error::{self, Error};
+use std::fs::{self, File};
+use std::io;
+use std::process;
 
 fn main() {
-    setup().unwrap();
-    
-    let con = Connection::open("ytc_data.db").unwrap();
-
-    con.execute(
-        "insert into users (id, user_name) values (?1, ?2)",
-        &[&"1", &"xanaphia"],
-    ).unwrap();
-
-    let stmt = con.prepare("select * from users").unwrap();
-
-    let item = stmt.query_map([], |row| {
-        Ok(row.get(0).unwrap())
-    }).unwrap();
-
-
+    if let Err(e) = check_config() {
+        eprintln!("Server start Error: {}", e)
+    }
 }
 
-fn setup() -> Result<(), Box<dyn Error>>{
+fn check_config() -> Result<(), Box<dyn Error>> {
+    let file = fs::read_to_string("ytc_config.json").or_else(|err| {
+        if err.kind() == io::ErrorKind::NotFound {
+            let config_json = json!({
+                "read": false,
+                "port": 7777,
+            });
+            fs::write("ytc_config.json", to_string_pretty(&config_json).unwrap())?;
+            process::exit(1);
+        } else {
+            return Err(err);
+        }
+    })?;
 
-    let config_json = json!({
-        "read":"false",
-        "port":"7777",
-        "database_path": "ytc_data.db"
-    });
-    
-    fs::write("ytc_config.json", to_string_pretty(&config_json).unwrap())?;
+    let config: serde_json::Value = serde_json::from_str(&file)?;
 
-    let con = Connection::open("ytc_data.db")?;
-
-    con.execute(
-        "create table users (
-            id integer primary key,
-            user_name text not null unique,
-        )", [],
-    )?;
-
-
-
-
+    if !config["read"].as_bool().unwrap() {
+        eprintln!("Please set 'read' in config to true, before continuing");
+        process::exit(1);
+    }
 
     Ok(())
 }
