@@ -5,12 +5,19 @@ use std::io;
 use std::process;
 
 fn main() {
-    if let Err(e) = check_config() {
-        eprintln!("Server start Error: {}", e)
-    }
+    
+    let config = match get_config(){
+        Ok(conf) => conf,
+        Err(e) => {
+            eprintln!("Config fetch error: {}", e);
+            process::exit(1);
+        }
+    };
 }
 
-fn check_config() -> Result<(), Box<dyn Error>> {
+fn get_config() -> Result<serde_json::Value, Box<dyn Error>> {
+
+    //attempt to read in config file if it doesn't exist, create a new one and exit
     let file = fs::read_to_string("ytc_config.json").or_else(|err| {
         if err.kind() == io::ErrorKind::NotFound {
             let config_json = json!({
@@ -24,12 +31,8 @@ fn check_config() -> Result<(), Box<dyn Error>> {
         }
     })?;
 
+    //read in config file as serde Value
     let config: serde_json::Value = serde_json::from_str(&file)?;
 
-    if !config["read"].as_bool().unwrap() {
-        eprintln!("Please set 'read' in config to true, before continuing");
-        process::exit(1);
-    }
-
-    Ok(())
+    Ok(config)
 }
