@@ -21,10 +21,17 @@ pub fn start(config: serde_json::Value) {
         if buf_string.contains("check username"){
             let user_name = buf_string.split(':').collect::<Vec<&str>>()[1].to_string();
 
+            let mut response_string = "false";
+
             if !users.contains(&user_name){
                 println!("available");
                 users.push(user_name);
+
+                response_string = "true";
             }
+
+            stream.write(response_string.as_bytes()).unwrap();
+            stream.flush().unwrap();
         }
     }
 }
