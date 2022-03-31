@@ -7,7 +7,7 @@ pub fn start(config: serde_json::Value) {
 
     let listener = TcpListener::bind(listener_addr).unwrap();
 
-    let users: Vec<&str> = Vec::new();
+    let mut users: Vec<String> = Vec::new();
 
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
@@ -16,6 +16,15 @@ pub fn start(config: serde_json::Value) {
 
         stream.read(&mut buffer).unwrap();
 
-        println!("{}", String::from_utf8_lossy(&buffer));
+        let buf_string = String::from_utf8_lossy(&buffer);
+
+        if buf_string.contains("check username"){
+            let user_name = buf_string.split(':').collect::<Vec<&str>>()[1].to_string();
+
+            if !users.contains(&user_name){
+                println!("available");
+                users.push(user_name);
+            }
+        }
     }
 }

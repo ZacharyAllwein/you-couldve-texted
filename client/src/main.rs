@@ -9,12 +9,12 @@ fn main() {
     let socket_address = match env::args().nth(1){
         None => {
             eprintln!("No socket address");
-            process::exit(1);
+            process::exit(0);
         },
         Some(address) => address,
     };
 
-    let mut connection = Connection {connection: TcpStream::connect(socket_address).unwrap()};
+    let mut connection = TcpStream::connect(socket_address).unwrap();
 
     let mut username = String::new();
     
@@ -23,23 +23,17 @@ fn main() {
 
     io::stdin().read_line(&mut username).unwrap();
 
-    println!("username available: {}", connection.send_stuff(format!("check username {}", username)));
+    println!("username available: {}", send_stuff(&mut connection, format!("check username:{}", username)));
 }
 
-struct Connection{
-    connection: TcpStream
-}
-
-impl Connection {
-    fn send_stuff(&mut self, stuff: String) -> String{
+fn send_stuff(connection: &mut TcpStream, stuff: String) -> String{
         
 
-        self.connection.write(stuff.as_bytes()).unwrap();
-        self.connection.flush().unwrap();
+    connection.write(stuff.as_bytes()).unwrap();
+    connection.flush().unwrap();
 
-        let mut response = String::new();
-        self.connection.read_to_string(&mut response).unwrap();
+    let mut response = String::new();
+    connection.read_to_string(&mut response).unwrap();
 
-        response
-    }
+    response
 }
