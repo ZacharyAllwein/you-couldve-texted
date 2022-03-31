@@ -7,6 +7,8 @@ pub fn start(config: serde_json::Value) {
 
     let listener = TcpListener::bind(listener_addr).unwrap();
 
+    let users: Vec<&str> = Vec::new();
+
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
 
