@@ -1,39 +1,27 @@
+use client::Client;
 use std::env;
 use std::process;
-use std::io::prelude::*;
-use std::net::TcpStream;
-use std::io;
+
+mod client;
 
 fn main() {
-    
-    let socket_address = match env::args().nth(1){
+    //program takes in a socket address to connect to, if nothing in program exits
+    let socket_address = match env::args().nth(1) {
         None => {
             eprintln!("No socket address");
             process::exit(0);
-        },
+        }
         Some(address) => address,
     };
 
-    let mut connection = TcpStream::connect(socket_address).unwrap();
+    //turns the socket address into a client instance and exits if the socket address doesn't exist,
+    let mut client = match Client::new(socket_address) {
+        Err(_) => {
+            eprintln!("Invalid socket address");
+            process::exit(0);
+        }
+        Ok(conn) => conn,
+    };
 
-    let mut username = String::new();
-    
-    print!("Enter session username: ");
-    io::stdout().flush().unwrap();
-
-    io::stdin().read_line(&mut username).unwrap();
-
-    println!("username available: {}", send_stuff(&mut connection, format!("check username:{}", username)));
-}
-
-fn send_stuff(connection: &mut TcpStream, stuff: String) -> String{
-        
-
-    connection.write(stuff.as_bytes()).unwrap();
-    connection.flush().unwrap();
-
-    let mut response = String::new();
-    connection.read_to_string(&mut response).unwrap();
-
-    response
+    client.login();
 }

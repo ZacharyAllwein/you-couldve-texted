@@ -1,5 +1,6 @@
 use std::io::prelude::*;
-use std::net::TcpListener;
+use std::io::BufReader;
+use std::net::{TcpListener, TcpStream};
 
 pub fn start(config: serde_json::Value) {
     let listener_addr =
@@ -12,26 +13,29 @@ pub fn start(config: serde_json::Value) {
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
 
-        let mut buffer = [0; 1024];
-
-        stream.read(&mut buffer).unwrap();
-
-        let buf_string = String::from_utf8_lossy(&buffer);
-
-        if buf_string.contains("check username"){
-            let user_name = buf_string.split(':').collect::<Vec<&str>>()[1].to_string();
-
-            let mut response_string = "false";
-
-            if !users.contains(&user_name){
-                println!("available");
-                users.push(user_name);
-
-                response_string = "true";
-            }
-
-            stream.write(response_string.as_bytes()).unwrap();
-            stream.flush().unwrap();
-        }
+        handle_request(stream);
     }
+}
+
+pub fn handle_request(mut stream: TcpStream) {
+    let mut buf_reader = BufReader::new(stream);
+    let received: Vec<u8> = buf_reader.fill_buf().unwrap().to_vec();
+
+    println!("{}", String::from_utf8_lossy(&received));
+
+    // stream.read_to_string(&mut request).unwrap();
+
+    // println!("got here");
+
+    // if !request.starts_with("YTCP") {
+    //     return;
+    // }
+    // //deref coercion and pattern matching to separate on carriage return and separate data from header
+    // if let &[header, data, ..] = &*request.split("\r\n").collect::<Vec<&str>>() {
+    //     let method = &header[5..header.len()];
+    //     println!("{}", method);
+    // }
+
+    // stream.write(b"").unwrap();
+    // stream.flush().unwrap();
 }
