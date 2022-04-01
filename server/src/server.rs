@@ -18,10 +18,15 @@ pub fn start(config: serde_json::Value) {
 }
 
 pub fn handle_request(mut stream: TcpStream) {
-    let mut buf_reader = BufReader::new(stream);
-    let received: Vec<u8> = buf_reader.fill_buf().unwrap().to_vec();
 
-    println!("{}", String::from_utf8_lossy(&received));
+    println!("made connection");
+    
+    // let mut buf = [0; 1024];
+
+    // stream.read_exact(&mut buf).unwrap();
+    // let msg = buf.into_iter().take_while(|&x| x != 0).collect::<Vec<_>>();
+
+    // println!("{}", String::from_utf8_lossy(&msg));
 
     // stream.read_to_string(&mut request).unwrap();
 
