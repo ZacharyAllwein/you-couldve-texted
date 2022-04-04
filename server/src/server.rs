@@ -13,34 +13,32 @@ pub fn start(config: serde_json::Value) {
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
 
-        handle_request(stream);
+        handle_request(stream)
     }
 }
 
 pub fn handle_request(mut stream: TcpStream) {
 
-    println!("made connection");
+    // println!("made connection");
     
-    // let mut buf = [0; 1024];
+    loop {
+        let mut request = String::new();
 
-    // stream.read_exact(&mut buf).unwrap();
-    // let msg = buf.into_iter().take_while(|&x| x != 0).collect::<Vec<_>>();
+        stream.read_to_string(&mut request).unwrap();
 
-    // println!("{}", String::from_utf8_lossy(&msg));
+        if !request.starts_with("YTCP") {
+            return;
+        }
 
-    // stream.read_to_string(&mut request).unwrap();
+        //deref coercion and pattern matching to separate on carriage return and separate data from header
+        if let &[header, data, ..] = &*request.split("\r\n").collect::<Vec<&str>>() {
+            let method = &header[5..header.len()];
+            println!("{}", method);
+        }
+    
+    }
 
-    // println!("got here");
 
-    // if !request.starts_with("YTCP") {
-    //     return;
-    // }
-    // //deref coercion and pattern matching to separate on carriage return and separate data from header
-    // if let &[header, data, ..] = &*request.split("\r\n").collect::<Vec<&str>>() {
-    //     let method = &header[5..header.len()];
-    //     println!("{}", method);
-    // }
+    println!("got here");
 
-    // stream.write(b"").unwrap();
-    // stream.flush().unwrap();
 }
