@@ -1,44 +1,70 @@
-use std::io::prelude::*;
-use std::io::BufReader;
+use std::io::{self, prelude::*};
 use std::net::{TcpListener, TcpStream};
+use std::collections::HashMap;
 
-pub fn start(config: serde_json::Value) {
-    let listener_addr =
-        config["ip"].as_str().unwrap().to_string() + ":" + config["port"].as_str().unwrap();
-
-    let listener = TcpListener::bind(listener_addr).unwrap();
-
-    let mut users: Vec<String> = Vec::new();
-
-    for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-
-        handle_request(stream)
-    }
+pub struct Server{
+    listener: TcpListener,
+    users: HashMap<String, TcpStream>,
 }
 
-pub fn handle_request(mut stream: TcpStream) {
+impl Server {
 
-    // println!("made connection");
-    
-    loop {
-        let mut request = String::new();
+    //initializer that builds a serde_json parsed into a address and builds the server
+    pub fn new(config: serde_json::Value) -> io::Result<Server>{
+        let listener_addr =
+            config["ip"].as_str().unwrap().to_string() + ":" + config["port"].as_str().unwrap();
 
-        stream.read_to_string(&mut request).unwrap();
-
-        if !request.starts_with("YTCP") {
-            return;
-        }
-
-        //deref coercion and pattern matching to separate on carriage return and separate data from header
-        if let &[header, data, ..] = &*request.split("\r\n").collect::<Vec<&str>>() {
-            let method = &header[5..header.len()];
-            println!("{}", method);
-        }
-    
+        Ok(Server {
+            listener: TcpListener::bind(listener_addr)?,
+            users: HashMap::new(),
+        })
     }
 
 
-    println!("got here");
+    //starts the server mainloop for handling individual requests
+    pub fn start(&self){
+        for stream in self.listener.incoming() {
+            let stream = stream.unwrap();
+    
+            Server::handle_request(stream);
+        }
+    }
 
+    fn handle_request(mut stream: TcpStream){
+        loop {
+        
+            let mut buf = [0; 1024];
+            stream.read(&mut buf).unwrap();
+    
+            let request = String::from_utf8_lossy(&buf);
+    
+            if !request.starts_with("YTCP") {
+                return;
+            }
+    
+            //deref coercion and pattern matching to separate on carriage return and separate data from header
+            if let &[header, data, ..] = &*request.split("\r\n").collect::<Vec<&str>>() {
+                let procedure = &header[5..header.len()];
+                
+                let response = Server::match_procedure(procedure, data);
+
+                stream.write(response.as_bytes()).unwrap();
+                stream.flush().unwrap();
+            }
+        
+        }
+    }
+
+    fn match_procedure(procedure: &str, data: &str) -> &'static str{
+
+        let procedure = match procedure{
+            "check username" => |data| {
+                println!("{}", data);
+                "good"
+            },
+            _ => |_| "bads",
+        };
+
+        procedure(data)
+    }
 }

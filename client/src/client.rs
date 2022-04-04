@@ -22,7 +22,7 @@ impl Client {
             print!("Enter session username: ");
             io::stdout().flush().unwrap();
             io::stdin().read_line(&mut username).unwrap();
-            self.send_server("check username", &username);
+            println!("{}", self.send_server("check username", &username));
     }
 }
 
