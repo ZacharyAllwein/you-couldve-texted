@@ -41,6 +41,9 @@ pub fn run(config: serde_json::Value) {
                     "check username" => check_username(data, users),
                     _ => "Error: Procedure Not Found",
                 }
+
+                //format response to use YTC protocol
+                let response = format!("YTCP\r\n{}", response);
                 
                 //write the response back to the client and continue on
                 stream.write(response.as_bytes()).unwrap();

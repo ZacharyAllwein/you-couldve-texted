@@ -22,12 +22,17 @@ impl Client {
             print!("Enter session username: ");
             io::stdout().flush().unwrap();
             io::stdin().read_line(&mut username).unwrap();
-            println!("{}", self.send_server("check username", &username));
+            
+            let response = self.send_server("check username", &username);
+
+            if response == "success"{
+                break;
+            }
     }
 }
 
     //handles most of the messaging to server
-    fn send_server(&mut self, method: &str, data: &String) -> String{
+    fn send_server(&mut self, method: &str, data: &String) -> &str{
         //format a you-couldve-texted protocol request
         let request = format!("YTCP {}\r\n{}", method, data);
 
@@ -36,10 +41,14 @@ impl Client {
         self.connection.flush().unwrap();
 
         //Read in any response and return it
-        let mut buf = [0; 1024];
+        let mut response = [0; 1024];
         self.connection.read(&mut buf).unwrap();
-        let response = String::from_utf8_lossy(&buf);
 
-        response.to_string()
-    }
+        let response = String::from_utf8_lossy(&response);
+
+        if let &[_, data] = &*response.split("\r\n").collect::<Vec<&str>>() {
+            data
+        }
+
+        ""
 }
