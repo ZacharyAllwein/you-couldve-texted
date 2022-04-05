@@ -32,7 +32,7 @@ impl Client {
 }
 
     //handles most of the messaging to server
-    fn send_server(&mut self, method: &str, data: &String) -> &str{
+    fn send_server(&mut self, method: &str, data: &String) -> String{
         //format a you-couldve-texted protocol request
         let request = format!("YTCP {}\r\n{}", method, data);
 
@@ -41,14 +41,12 @@ impl Client {
         self.connection.flush().unwrap();
 
         //Read in any response and return it
-        let mut response = [0; 1024];
+        let mut buf = [0; 1024];
         self.connection.read(&mut buf).unwrap();
 
-        let response = String::from_utf8_lossy(&response);
+        let response = String::from_utf8_lossy(&buf);
 
-        if let &[_, data] = &*response.split("\r\n").collect::<Vec<&str>>() {
-            data
-        }
-
-        ""
+        //split on carriage return + newline and extract actual response data
+        response.split("\r\n").nth(1).unwrap().to_string()
+}
 }

@@ -10,7 +10,7 @@ pub fn run(config: serde_json::Value) {
     let listener = TcpListener::bind(listener_addr).unwrap();
 
     //hashmap to keep track of unique users and their TcpStreams
-    let users: HashMap<&str, &TcpStream> = HashMap::new();
+    let mut users: HashMap<String, TcpStream> = HashMap::new();
 
     //iterate through incoming streams and send them to a handler
     for stream in listener.incoming() {
@@ -36,11 +36,15 @@ pub fn run(config: serde_json::Value) {
                 //seperate header from YTCP to get the procedure call
                 let procedure = &header[5..header.len()];
 
+                let data = data.to_string();
+
                 //generate a respone based on the procedure
                 let response = match procedure {
-                    "check username" => check_username(data, users),
+                    "check username" => check_username(data, stream.try_clone().unwrap(), &mut users),
                     _ => "Error: Procedure Not Found",
-                }
+                };
+
+                println!("{:?}", users);
 
                 //format response to use YTC protocol
                 let response = format!("YTCP\r\n{}", response);
@@ -54,12 +58,12 @@ pub fn run(config: serde_json::Value) {
 }
 
 //this is going to need to be changed up once I have access to an IDE
-fn check_username<'a>(data: &'a str, stream: &'a TcpStream, users: &mut HashMap<&str, &TcpStream>) -> &str{
+fn check_username<'a>(data: String, stream: TcpStream, users: &mut HashMap<String, TcpStream>) -> &'static str{
     if users.contains_key(&data){
         "fail"
     }
     else{
-        users.push(data, stream);
+        users.insert(data, stream);
         "success"
     }
 }
