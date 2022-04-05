@@ -11,13 +11,6 @@ fn main() {
         process::exit(0);
     }
 
-    let server = match Server::new(config){
-        Ok(server) => server,
-        Err(_) => {
-            eprintln!("Failed to bind to given address");
-            process::exit(0);
-        }
-    };
 
-    server.start();
+    server::run(config);
 }
