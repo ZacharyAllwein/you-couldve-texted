@@ -14,12 +14,10 @@ pub fn run(config: serde_json::Value) {
 
     //iterate through incoming streams and send them to a handler
     for stream in listener.incoming() {
-        
         let mut stream = stream.unwrap();
 
         //main loop to read off of the que and respond to requests
         loop {
-
             //read the buffer into an array and turn it into a String for easier manipulation
             let mut buf = [0; 1024];
             stream.read(&mut buf).unwrap();
@@ -32,23 +30,21 @@ pub fn run(config: serde_json::Value) {
 
             //deref coercion and pattern matching to separate on carriage return and separate data from header
             if let &[header, data, ..] = &*request.split("\r\n").collect::<Vec<&str>>() {
-
-                //seperate header from YTCP to get the procedure call
+                //separate header from YTCP to get the procedure call
                 let procedure = &header[5..header.len()];
 
                 let data = data.to_string();
 
-                //generate a respone based on the procedure
+                //generate a response based on the procedure
                 let response = match procedure {
-                    "check username" => check_username(data, stream.try_clone().unwrap(), &mut users),
+                    "check username" => {
+                        check_username(data, stream.try_clone().unwrap(), &mut users)
+                    }
                     _ => "Error: Procedure Not Found",
                 };
 
-                println!("{:?}", users);
-
                 //format response to use YTC protocol
                 let response = format!("YTCP\r\n{}", response);
-                
                 //write the response back to the client and continue on
                 stream.write(response.as_bytes()).unwrap();
                 stream.flush().unwrap();
@@ -58,11 +54,14 @@ pub fn run(config: serde_json::Value) {
 }
 
 //this is going to need to be changed up once I have access to an IDE
-fn check_username<'a>(data: String, stream: TcpStream, users: &mut HashMap<String, TcpStream>) -> &'static str{
-    if users.contains_key(&data){
+fn check_username<'a>(
+    data: String,
+    stream: TcpStream,
+    users: &mut HashMap<String, TcpStream>,
+) -> &'static str {
+    if users.contains_key(&data) {
         "fail"
-    }
-    else{
+    } else {
         users.insert(data, stream);
         "success"
     }

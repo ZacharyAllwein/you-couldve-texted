@@ -24,4 +24,5 @@ fn main() {
     };
 
     client.login();
+    client.run();
 }
