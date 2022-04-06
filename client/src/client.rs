@@ -42,14 +42,15 @@ impl Client {
             //sanitize data also turns username into a &str so thats cool?
             let command = command.trim();
 
-            if command == "" {
-                continue;
+            if command == "exit"{
+                break;
             }
 
-            let commands = command.split_whitespace().collect::<Vec<&str>>();
-            let response = self.send_server(commands[0], commands[1]);
+            if let &[method, data] = &*command.split_whitespace().collect::<Vec<&str>>(){
+                let response = self.send_server(method, data);
+                println!("{}", response);
+            }
 
-            println!("{}", response);
         }
     }
 
