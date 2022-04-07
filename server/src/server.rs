@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
-use std::thread;
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 pub fn run(config: serde_json::Value) {
     //turning config into useful address to bind the listener on
@@ -18,12 +18,10 @@ pub fn run(config: serde_json::Value) {
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
 
-        //thread safe mutable reference to users table.
         let users_clone = Arc::clone(&users);
 
         thread::spawn(move || {
-
-        //main loop to read off of the que and respond to requests
+            //main loop to read off of the que and respond to requests
             loop {
                 //read the buffer into an array and turn it into a String for easier manipulation
                 let mut buf = [0; 1024];
@@ -44,12 +42,8 @@ pub fn run(config: serde_json::Value) {
 
                     //generate a response based on the procedure
                     let response = match procedure {
-                        "check username" => {
-                            check_username(data, stream.try_clone().unwrap(), &users_clone)
-                        },
-                        "connect" => {
-                            connect(data, &users_clone)
-                        }
+                        "login" => login(data, stream.try_clone().unwrap(), &users_clone),
+                        "connect" => connect(data, &users_clone),
                         _ => "Error: Procedure Not Found",
                     };
 
@@ -65,12 +59,11 @@ pub fn run(config: serde_json::Value) {
 }
 
 //this is going to need to be changed up once I have access to an IDE
-fn check_username(
+fn login(
     data: String,
     stream: TcpStream,
     users: &Arc<Mutex<HashMap<String, TcpStream>>>,
 ) -> &'static str {
-
     let mut users = users.lock().unwrap();
     if users.contains_key(&data) {
         "fail"
@@ -80,15 +73,15 @@ fn check_username(
     }
 }
 
-fn connect(data: String, users: &Arc<Mutex<HashMap<String, TcpStream>>>) -> &'static str{
+fn connect(data: String, users: &Arc<Mutex<HashMap<String, TcpStream>>>) -> &'static str {
     let users = users.lock().unwrap();
 
-    match users.get(&data){
-        Some(mut connect_stream) => {
-            connect_stream.write(b"you got a connection").unwrap();
-            connect_stream.flush().unwrap();
-            "made connection"
-        },
-        None => "No user found",
+    match users.get(&data) {
+        Some(mut stream) => {
+            stream.write(b"You got a connection!").unwrap();
+            stream.flush().unwrap();
+            "success"
+        }
+        None => "fail",
     }
 }
