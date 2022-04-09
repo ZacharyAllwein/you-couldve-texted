@@ -38,15 +38,22 @@ fn main() {
 
         stdin().read_line(&mut buf).unwrap();
 
-        if let &[method, data] = &*buf.split_whitespace().collect::<Vec<&str>>() {
-            //format a you-couldve-texted protocol request
-            let request = format!("YTCP {}\r\n{}\r\n", method, data);
+        let mut buf = buf.split_whitespace();
 
-            //acquire connections lock and send request as bytes
-            let mut connection = con_clone1.lock().unwrap();
-            connection.write(request.as_bytes()).unwrap();
-            connection.flush().unwrap();
-        }
+        let procedure = match buf.next() {
+            Some(proc) if proc.trim() != "" => proc,
+            _ => continue,
+        };
+
+        let data = buf.collect::<Vec<&str>>().join(" ");
+
+        // format a you-couldve-texted protocol request
+        let request = format!("YTCP {}\r\n{}\r\n", procedure, data);
+
+        //acquire connections lock and send request as bytes
+        let mut connection = con_clone1.lock().unwrap();
+        connection.write(request.as_bytes()).unwrap();
+        connection.flush().unwrap();
     });
 
     let server_reader = thread::spawn(move || loop {
@@ -55,7 +62,13 @@ fn main() {
         let mut connection = con_clone2.lock().unwrap();
 
         match connection.read(&mut buf) {
-            Ok(_) => println!("{}", String::from_utf8_lossy(&buf)),
+            Ok(_) => {
+                println!("\n{}", String::from_utf8_lossy(&buf));
+
+                //on a successful read, reformat stdout
+                print!(">");
+                stdout().flush().unwrap();
+            }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => (),
             Err(e) => panic!("Encountered io Error: {}", e),
         }

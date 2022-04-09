@@ -43,7 +43,7 @@ pub fn run(config: serde_json::Value) {
                     //generate a response based on the procedure
                     let response = match procedure {
                         "login" => login(data, stream.try_clone().unwrap(), &users_clone),
-                        "connect" => connect(data, &users_clone),
+                        "connect" => message(data, &users_clone),
                         _ => "Error: Procedure Not Found",
                     };
 
@@ -73,12 +73,21 @@ fn login(
     }
 }
 
-fn connect(data: String, users: &Arc<Mutex<HashMap<String, TcpStream>>>) -> &'static str {
+fn message(data: String, users: &Arc<Mutex<HashMap<String, TcpStream>>>) -> &'static str {
     let users = users.lock().unwrap();
 
-    match users.get(&data) {
+    let mut data = data.split_whitespace();
+
+    let recipient = match data.next() {
+        Some(proc) if proc.trim() != "" => proc,
+        _ => "fail",
+    };
+
+    let message = data.collect::<Vec<&str>>().join(" ");
+
+    match users.get(recipient) {
         Some(mut stream) => {
-            stream.write(b"You got a connection!").unwrap();
+            stream.write(message.as_bytes()).unwrap();
             stream.flush().unwrap();
             "success"
         }
